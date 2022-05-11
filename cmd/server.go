@@ -40,7 +40,10 @@ func StartServer() {
 	route := http.NewServeMux()
 
 	// Notif API
-	route.HandleFunc("/key", notifHandler.GenerateKey)
+	route.HandleFunc("/key/create", notifHandler.GenerateKey)
+	route.HandleFunc("/url/create", notifHandler.InsertUrl)
+	route.HandleFunc("/url/test", notifHandler.NotificationTester)
+	route.HandleFunc("/url/toggle", notifHandler.UrlToggle)
 
 	log.Println("SERVER STARTED")
 
