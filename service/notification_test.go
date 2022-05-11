@@ -35,7 +35,7 @@ func TestGenerateKey(t *testing.T) {
 			MerchantID: 0,
 		}
 
-		httpCode, resp := notifService.Create(context.Background(), req)
+		httpCode, resp := notifService.GenerateKey(context.Background(), req)
 		assert.Equal(t, httpCode, http.StatusBadRequest)
 		assert.Nil(t, resp.ResultData, "Result should be nil")
 	}(t)
@@ -50,11 +50,11 @@ func TestGenerateKey(t *testing.T) {
 			MerchantID: -100,
 		}
 
-		// mockNotifRepo.On("Create", req.MerchantID).Return(errors.New("error"))
-		httpCode, resp := notifService.Create(context.Background(), req)
+		// mockNotifRepo.On("GenerateKey", req.MerchantID).Return(errors.New("error"))
+		httpCode, resp := notifService.GenerateKey(context.Background(), req)
 		assert.Equal(t, httpCode, http.StatusBadRequest)
 		assert.NotNil(t, resp.RawMessage, "Response raw message should not be nil")
-		mockNotifRepo.AssertNumberOfCalls(t, "Create", 0)
+		mockNotifRepo.AssertNumberOfCalls(t, "GenerateKey", 0)
 	}(t)
 
 	// Test Create Notif Success
@@ -67,10 +67,10 @@ func TestGenerateKey(t *testing.T) {
 			MerchantID: 1,
 		}
 
-		mockNotifRepo.On("Create", req.MerchantID, mock.Anything).Return(nil)
-		httpCode, resp := notifService.Create(context.Background(), req)
+		mockNotifRepo.On("GenerateKey", req.MerchantID, mock.Anything).Return(nil)
+		httpCode, resp := notifService.GenerateKey(context.Background(), req)
 		assert.Equal(t, httpCode, http.StatusOK)
 		assert.NotNil(t, resp.RawMessage, "Response raw message should not be nil")
-		mockNotifRepo.AssertNumberOfCalls(t, "Create", 1)
+		mockNotifRepo.AssertNumberOfCalls(t, "GenerateKey", 1)
 	}(t)
 }

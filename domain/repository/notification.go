@@ -7,7 +7,7 @@ import (
 
 // BrandRepository manages database operations for brand.
 type NotifRepository interface {
-	Create(merchantID int64, key string) error
+	GenerateKey(merchantID int64, key string) error
 }
 
 type notifRepoImpl struct {
@@ -21,8 +21,8 @@ func NewNotifRepository() *notifRepoImpl {
 	}
 }
 
-// Create creates a new brand into the database.
-func (r *notifRepoImpl) Create(merchantID int64, key string) error {
+// GenerateKey Generate a new key for merchant into the database.
+func (r *notifRepoImpl) GenerateKey(merchantID int64, key string) error {
 	_, err := r.db.Exec(`
 		update notification.merchants
 		set key = $1

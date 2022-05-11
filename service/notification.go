@@ -16,7 +16,7 @@ import (
 
 // NotifService manage logical syntax for notif.
 type NotifService interface {
-	Create(ctx context.Context, request model.GenerateKeyRequest) (int, *model.BaseResponse)
+	GenerateKey(ctx context.Context, request model.GenerateKeyRequest) (int, *model.BaseResponse)
 }
 
 type notifServiceImpl struct {
@@ -42,7 +42,7 @@ func (s *notifServiceImpl) Validate() *notifServiceImpl {
 }
 
 // Create creates a new key and store it into the database.
-func (s *notifServiceImpl) Create(ctx context.Context, request model.GenerateKeyRequest) (int, *model.BaseResponse) {
+func (s *notifServiceImpl) GenerateKey(ctx context.Context, request model.GenerateKeyRequest) (int, *model.BaseResponse) {
 	// validate request
 	if request.MerchantID <= 0 {
 		return utils.RequestRequired("merchant_id")
@@ -54,7 +54,7 @@ func (s *notifServiceImpl) Create(ctx context.Context, request model.GenerateKey
 
 	finalKey := fmt.Sprintf("%d%s%d", request.MerchantID, uuid.String(), time.Now().Unix())
 
-	err := s.notifRepo.Create(request.MerchantID, finalKey)
+	err := s.notifRepo.GenerateKey(request.MerchantID, finalKey)
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to create key err: %s", err.Error()))
 		return http.StatusInternalServerError, &model.BaseResponse{RawMessage: err.Error()}

@@ -11,8 +11,8 @@ type NotifRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: merchantID, key
-func (_m *NotifRepository) Create(merchantID int64, key string) error {
+// GenerateKey provides a mock function with given fields: merchantID, key
+func (_m *NotifRepository) GenerateKey(merchantID int64, key string) error {
 	ret := _m.Called(merchantID, key)
 
 	var r0 error

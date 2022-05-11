@@ -54,7 +54,7 @@ func (h *NotifHandler) GenerateKey(w http.ResponseWriter, r *http.Request) {
 		var request model.GenerateKeyRequest
 		json.Unmarshal(body, &request)
 
-		httpCode, resp = h.notifService.Create(ctx, request)
+		httpCode, resp = h.notifService.GenerateKey(ctx, request)
 	} else {
 		httpCode = http.StatusMethodNotAllowed
 	}
