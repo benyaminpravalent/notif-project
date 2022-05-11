@@ -27,38 +27,10 @@ func StartServer() {
 	database.InitDatabases(ctx)
 
 	// REPOSITORIES
-	brandRepo := repository.NewBrandRepository()
-	productRepo := repository.NewProductRepository()
-	transactionRepo := repository.NewTransactionRepository()
 	notifRepo := repository.NewNotifRepository()
-
-	brandService := service.NewBrandService().
-		SetBrandRepo(brandRepo).
-		Validate()
-
-	productService := service.NewProductService().
-		SetProductRepo(productRepo).
-		SetBrandRepo(brandRepo).
-		Validate()
-
-	transactionService := service.NewTransactionService().
-		SetTransactionRepo(transactionRepo).
-		Validate()
 
 	notifService := service.NewNotifService().
 		SetNotifRepo(notifRepo).
-		Validate()
-
-	brandHandler := handler.NewBrandHandler().
-		SetBrandService(brandService).
-		Validate()
-
-	productHandler := handler.NewProductHandler().
-		SetProductService(productService).
-		Validate()
-
-	transactionHandler := handler.NewTransactionhandler().
-		SetTransactionService(transactionService).
 		Validate()
 
 	notifHandler := handler.NewNotifHandler().
@@ -66,16 +38,6 @@ func StartServer() {
 		Validate()
 
 	route := http.NewServeMux()
-
-	// Brand API
-	route.HandleFunc("/brand", brandHandler.Brand)
-
-	// Product API
-	route.HandleFunc("/product", productHandler.Product)
-	route.HandleFunc("/product/brand", productHandler.ProductByBrand)
-
-	// Transaction API
-	route.HandleFunc("/order", transactionHandler.Transaction)
 
 	// Notif API
 	route.HandleFunc("/key", notifHandler.GenerateKey)
