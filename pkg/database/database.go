@@ -12,8 +12,7 @@ import (
 
 var DB *sqlx.DB
 
-// InitMySql initiates mysql connection and store it to DB
-func InitMySql(ctx context.Context) {
+func InitDatabases(ctx context.Context) {
 	l := logger.GetLoggerContext(ctx, "database", "Connect")
 
 	dialect := os.Getenv("DIALECT")

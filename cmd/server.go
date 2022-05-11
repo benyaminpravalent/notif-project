@@ -24,12 +24,13 @@ func StartServer() {
 	}
 
 	logger.Configure()
-	database.InitMySql(ctx)
+	database.InitDatabases(ctx)
 
 	// REPOSITORIES
 	brandRepo := repository.NewBrandRepository()
 	productRepo := repository.NewProductRepository()
 	transactionRepo := repository.NewTransactionRepository()
+	notifRepo := repository.NewNotifRepository()
 
 	brandService := service.NewBrandService().
 		SetBrandRepo(brandRepo).
@@ -44,6 +45,10 @@ func StartServer() {
 		SetTransactionRepo(transactionRepo).
 		Validate()
 
+	notifService := service.NewNotifService().
+		SetNotifRepo(notifRepo).
+		Validate()
+
 	brandHandler := handler.NewBrandHandler().
 		SetBrandService(brandService).
 		Validate()
@@ -54,6 +59,10 @@ func StartServer() {
 
 	transactionHandler := handler.NewTransactionhandler().
 		SetTransactionService(transactionService).
+		Validate()
+
+	notifHandler := handler.NewNotifHandler().
+		SetNotifService(notifService).
 		Validate()
 
 	route := http.NewServeMux()
@@ -67,6 +76,9 @@ func StartServer() {
 
 	// Transaction API
 	route.HandleFunc("/order", transactionHandler.Transaction)
+
+	// Notif API
+	route.HandleFunc("/generate/key", notifHandler.GenerateKey)
 
 	log.Println("SERVER STARTED")
 
