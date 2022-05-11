@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/richardsahvic/jamtangan/domain/model"
-	repoMock "github.com/richardsahvic/jamtangan/domain/repository/mocks"
-	"github.com/richardsahvic/jamtangan/service"
+	"github.com/project/notif-project/domain/model"
+	repoMock "github.com/project/notif-project/domain/repository/mocks"
+	"github.com/project/notif-project/service"
 
 	"github.com/stretchr/testify/assert"
 )

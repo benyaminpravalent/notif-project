@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/richardsahvic/jamtangan/domain/model"
-	"github.com/richardsahvic/jamtangan/service"
+	"github.com/project/notif-project/domain/model"
+	"github.com/project/notif-project/service"
 	"github.com/stretchr/testify/assert"
 
-	// serviceMock "github.com/richardsahvic/jamtangan/service/mocks"
-	repoMock "github.com/richardsahvic/jamtangan/domain/repository/mocks"
+	// serviceMock "github.com/project/notif-project/service/mocks"
+	repoMock "github.com/project/notif-project/domain/repository/mocks"
 )
 
 func TestCreateBrand(t *testing.T) {

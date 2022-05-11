@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/richardsahvic/jamtangan/pkg/config"
+	"github.com/project/notif-project/pkg/config"
 
 	"github.com/sirupsen/logrus"
 )

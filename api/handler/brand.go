@@ -8,9 +8,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/richardsahvic/jamtangan/domain/model"
-	"github.com/richardsahvic/jamtangan/pkg/logger"
-	"github.com/richardsahvic/jamtangan/service"
+	"github.com/project/notif-project/domain/model"
+	"github.com/project/notif-project/pkg/logger"
+	"github.com/project/notif-project/service"
 )
 
 // BrandHandler defines dependencies for brand handler.

@@ -6,13 +6,13 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/richardsahvic/jamtangan/api/handler"
-	"github.com/richardsahvic/jamtangan/domain/repository"
-	"github.com/richardsahvic/jamtangan/pkg/config"
-	"github.com/richardsahvic/jamtangan/pkg/constant"
-	"github.com/richardsahvic/jamtangan/pkg/database"
-	"github.com/richardsahvic/jamtangan/pkg/logger"
-	"github.com/richardsahvic/jamtangan/service"
+	"github.com/project/notif-project/api/handler"
+	"github.com/project/notif-project/domain/repository"
+	"github.com/project/notif-project/pkg/config"
+	"github.com/project/notif-project/pkg/constant"
+	"github.com/project/notif-project/pkg/database"
+	"github.com/project/notif-project/pkg/logger"
+	"github.com/project/notif-project/service"
 )
 
 // StartServer starts the server.

@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/richardsahvic/jamtangan/domain/model"
-	"github.com/richardsahvic/jamtangan/domain/repository"
-	"github.com/richardsahvic/jamtangan/pkg/logger"
-	"github.com/richardsahvic/jamtangan/pkg/utils"
+	"github.com/project/notif-project/domain/model"
+	"github.com/project/notif-project/domain/repository"
+	"github.com/project/notif-project/pkg/logger"
+	"github.com/project/notif-project/pkg/utils"
 )
 
 // ProductService manage logical syntax for product.

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/richardsahvic/jamtangan/domain/model"
+	"github.com/project/notif-project/domain/model"
 )
 
 // RequestRequired returns a response with a request required message.

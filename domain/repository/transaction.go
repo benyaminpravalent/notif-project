@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/richardsahvic/jamtangan/domain/model"
-	"github.com/richardsahvic/jamtangan/pkg/database"
+	"github.com/project/notif-project/domain/model"
+	"github.com/project/notif-project/pkg/database"
 )
 
 // TransactionRepository manages database operations for transaction.

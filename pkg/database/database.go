@@ -6,8 +6,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/richardsahvic/jamtangan/pkg/config"
-	"github.com/richardsahvic/jamtangan/pkg/logger"
+	"github.com/project/notif-project/pkg/config"
+	"github.com/project/notif-project/pkg/logger"
 )
 
 var DB *sqlx.DB
