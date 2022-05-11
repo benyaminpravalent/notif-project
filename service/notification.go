@@ -44,7 +44,7 @@ func (s *notifServiceImpl) Validate() *notifServiceImpl {
 // Create creates a new key and store it into the database.
 func (s *notifServiceImpl) Create(ctx context.Context, request model.GenerateKeyRequest) (int, *model.BaseResponse) {
 	// validate request
-	if request.MerchantID == 0 {
+	if request.MerchantID <= 0 {
 		return utils.RequestRequired("merchant_id")
 	}
 

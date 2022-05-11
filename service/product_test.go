@@ -6,21 +6,18 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/project/notif-project/cmd"
 	"github.com/project/notif-project/domain/model"
 	repoMock "github.com/project/notif-project/domain/repository/mocks"
-	"github.com/project/notif-project/pkg/config"
-	"github.com/project/notif-project/pkg/logger"
 	"github.com/project/notif-project/service"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func prepare() {
-	config.Load(cmd.DefaultConfig, "../config.json")
-	logger.Configure()
-	return
-}
+// func prepare() {
+// 	config.Load(cmd.DefaultConfig, "../config.json")
+// 	logger.Configure()
+// 	return
+// }
 
 func TestCreateProduct(t *testing.T) {
 	prepare()
