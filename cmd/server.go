@@ -78,7 +78,7 @@ func StartServer() {
 	route.HandleFunc("/order", transactionHandler.Transaction)
 
 	// Notif API
-	route.HandleFunc("/generate/key", notifHandler.GenerateKey)
+	route.HandleFunc("/key", notifHandler.GenerateKey)
 
 	log.Println("SERVER STARTED")
 

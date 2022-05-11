@@ -51,10 +51,10 @@ func (h *NotifHandler) GenerateKey(w http.ResponseWriter, r *http.Request) {
 	var resp interface{}
 
 	if r.Method == http.MethodPost {
-		var request model.CreateBrandRequest
+		var request model.GenerateKeyRequest
 		json.Unmarshal(body, &request)
 
-		// httpCode, resp = h.brandService.Create(ctx, request)
+		httpCode, resp = h.notifService.Create(ctx, request)
 	} else {
 		httpCode = http.StatusMethodNotAllowed
 	}

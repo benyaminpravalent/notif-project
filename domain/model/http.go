@@ -67,3 +67,11 @@ type GetTranscationDetailResponse struct {
 	Items       []TransactionItem `json:"items"`
 	TotalAmount float64           `json:"total_amount"`
 }
+
+type GenerateKeyRequest struct {
+	MerchantID int64 `json:"merchant_id"`
+}
+
+type GenerateKeyResponse struct {
+	Key string `json:"key"`
+}
