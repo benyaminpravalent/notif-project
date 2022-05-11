@@ -1,6 +1,6 @@
 {
     "log_level": "DEBUG",
     "log_format": "json",
-    "mysql_dsn": "root:rsjs1208@tcp(localhost:3306)/jamtangan_test?parseTime=true",
+    "mysql_dsn": "postgres:postgres@tcp(localhost:5432)/postgres?parseTime=true",
     "port": "8001"
 }

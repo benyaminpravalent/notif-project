@@ -31,8 +31,7 @@ func (r *productRepoImpl) scanRows(rows *sql.Rows) (items []*model.Product, err 
 	items = make([]*model.Product, 0)
 	for rows.Next() {
 		res := &model.Product{}
-		err = rows.Scan(&res.ID, &res.SKU, &res.BrandID, &res.Stock, &res.Price, &res.CreatedAt,
-			&res.UpdatedAt, &res.DeletedAt)
+		err = rows.Scan(&res.ID, &res.SKU, &res.BrandID, &res.Stock, &res.Price, &res.CreatedAt)
 		if err != nil {
 			return
 		}
@@ -75,9 +74,7 @@ func (r *productRepoImpl) GetBySKU(sku string) (*model.Product, error) {
 func (r *productRepoImpl) GetByID(id int64) (*model.Product, error) {
 	res := &model.Product{}
 	err := r.db.Get(res, `
-		SELECT *
-		FROM product
-		WHERE id = ?`, id)
+		SELECT * from skripsi.resource r where r.is_active = 1::bit and r.resource_id = 6`)
 	if err == sql.ErrNoRows {
 		res = nil
 		err = nil

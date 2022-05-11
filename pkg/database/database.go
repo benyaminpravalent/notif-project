@@ -2,11 +2,11 @@ package database
 
 import (
 	"context"
+	"fmt"
+	"os"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-
-	"github.com/project/notif-project/pkg/config"
+	_ "github.com/lib/pq"
 	"github.com/project/notif-project/pkg/logger"
 )
 
@@ -16,20 +16,26 @@ var DB *sqlx.DB
 func InitMySql(ctx context.Context) {
 	l := logger.GetLoggerContext(ctx, "database", "Connect")
 
-	dsn := config.GetString("mysql_dsn")
-	l.Info(dsn)
+	dialect := os.Getenv("DIALECT")
+	host := os.Getenv("HOST")
+	dbPort := os.Getenv("DBPORT")
+	user := os.Getenv("USER")
+	dbName := os.Getenv("NAME")
+	password := os.Getenv("PASSWORD")
 
-	dbConnection, err := sqlx.Open("mysql", dsn)
+	dbURI := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s port=%s", host, user, dbName, password, dbPort)
+
+	db, err := sqlx.Open(dialect, dbURI)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	err = dbConnection.Ping()
+	err = db.Ping()
 	if err != nil {
 		panic(err.Error())
 	}
 
-	l.Info("Connected to MySQL")
+	l.Info("Connected to PostgreSQL")
 
-	DB = dbConnection
+	DB = db
 }

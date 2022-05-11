@@ -32,7 +32,7 @@ func (r *transactionRepoImpl) scanRows(rows *sql.Rows) (items []*model.Transacti
 	for rows.Next() {
 		res := &model.Transaction{}
 		err = rows.Scan(&res.ID, &res.SKU, &res.Quantity, &res.OrderID,
-			&res.CreatedAt, &res.UpdatedAt, &res.DeletedAt, &res.Subtotal)
+			&res.CreatedAt, &res.Subtotal)
 		if err != nil {
 			return
 		}
