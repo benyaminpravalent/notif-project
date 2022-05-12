@@ -74,3 +74,93 @@ func TestGenerateKey(t *testing.T) {
 		mockNotifRepo.AssertNumberOfCalls(t, "GenerateKey", 1)
 	}(t)
 }
+
+func TestInsertUrl(t *testing.T) {
+	prepare()
+
+	// Case when  merchantID = 0
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.Url{
+			MerchantID: 0,
+		}
+
+		httpCode, resp := notifService.InsertUrl(context.Background(), req)
+		assert.Equal(t, httpCode, http.StatusBadRequest)
+		assert.NotNil(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckUrlExistence", 0)
+		mockNotifRepo.AssertNumberOfCalls(t, "InsertUrl", 0)
+	}(t)
+
+	// Case when  url = ""
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.Url{
+			Url: "",
+		}
+
+		httpCode, resp := notifService.InsertUrl(context.Background(), req)
+		assert.Equal(t, httpCode, http.StatusBadRequest)
+		assert.NotNil(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckUrlExistence", 0)
+		mockNotifRepo.AssertNumberOfCalls(t, "InsertUrl", 0)
+	}(t)
+
+	// Case when  notification_type = ""
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.Url{
+			NotificationType: "",
+		}
+
+		httpCode, resp := notifService.InsertUrl(context.Background(), req)
+		assert.Equal(t, httpCode, http.StatusBadRequest)
+		assert.NotNil(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckUrlExistence", 0)
+		mockNotifRepo.AssertNumberOfCalls(t, "InsertUrl", 0)
+	}(t)
+
+	// Case when  success
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.Url{
+			MerchantID:       4,
+			Url:              "http://localhost:3000/tokobaju/webhook/notification",
+			NotificationType: "refund",
+		}
+
+		mockNotifRepo.On("CheckUrlExistence", req).Return(int64(0), nil)
+		mockNotifRepo.On("InsertUrl", req).Return(nil)
+		httpCode, resp := notifService.InsertUrl(context.Background(), req)
+		assert.Equal(t, http.StatusOK, httpCode)
+		assert.Empty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckUrlExistence", 1)
+		mockNotifRepo.AssertNumberOfCalls(t, "InsertUrl", 1)
+	}(t)
+
+	// Case when  notification_type = ""
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.Url{
+			MerchantID:       4,
+			Url:              "http://localhost:3000/tokobaju/webhook/notification",
+			NotificationType: "refund",
+		}
+
+		mockNotifRepo.On("CheckUrlExistence", req).Return(int64(1), nil)
+		httpCode, resp := notifService.InsertUrl(context.Background(), req)
+		assert.Equal(t, http.StatusBadRequest, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckUrlExistence", 1)
+	}(t)
+}
