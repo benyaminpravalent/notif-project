@@ -336,6 +336,7 @@ func (s *notifServiceImpl) RetrySendNotifExecution(ctx context.Context, param mo
 					log.Error(fmt.Sprintf("failed while do UpdateNotifStatus, err: %s", err.Error()))
 					return http.StatusInternalServerError, &model.BaseResponse{RawMessage: err.Error()}
 				}
+				return http.StatusOK, &model.BaseResponse{ResultData: "SUCCESS"}
 			}
 			time.Sleep(5 * time.Second)
 			continue
