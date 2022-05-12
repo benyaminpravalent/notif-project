@@ -399,3 +399,275 @@ func TestSendNotifExecution(t *testing.T) {
 		mockNotifRepo.AssertNumberOfCalls(t, "UpdateNotifStatus", 1)
 	}(t)
 }
+
+func TestSendNotif(t *testing.T) {
+	prepare()
+
+	// Case when failed merchantID <= 0
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotif{
+			MerchantID:        0,
+			NotificationType:  "payment",
+			TransactionID:     2323,
+			Amount:            10000.00,
+			TransactionStatus: "success",
+		}
+
+		httpCode, resp := notifService.SendNotif(context.Background(), req)
+		assert.Equal(t, http.StatusBadRequest, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetMerchantUrlDetail", 0)
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckOnProsessNotif", 0)
+		mockNotifService.AssertNumberOfCalls(t, "SendNotifExecution", 0)
+	}(t)
+
+	// Case when failed transactionID <= 0
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotif{
+			MerchantID:        5,
+			NotificationType:  "payment",
+			TransactionID:     0,
+			Amount:            10000.00,
+			TransactionStatus: "success",
+		}
+
+		httpCode, resp := notifService.SendNotif(context.Background(), req)
+		assert.Equal(t, http.StatusBadRequest, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetMerchantUrlDetail", 0)
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckOnProsessNotif", 0)
+		mockNotifService.AssertNumberOfCalls(t, "SendNotifExecution", 0)
+	}(t)
+
+	// Case when failed NotificationType is empty string
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotif{
+			MerchantID:        5,
+			NotificationType:  "",
+			TransactionID:     32532,
+			Amount:            10000.00,
+			TransactionStatus: "success",
+		}
+
+		httpCode, resp := notifService.SendNotif(context.Background(), req)
+		assert.Equal(t, http.StatusBadRequest, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetMerchantUrlDetail", 0)
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckOnProsessNotif", 0)
+		mockNotifService.AssertNumberOfCalls(t, "SendNotifExecution", 0)
+	}(t)
+
+	// Case when failed transaction_status is empty string
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotif{
+			MerchantID:        5,
+			NotificationType:  "payment",
+			TransactionID:     32532,
+			Amount:            10000.00,
+			TransactionStatus: "",
+		}
+
+		httpCode, resp := notifService.SendNotif(context.Background(), req)
+		assert.Equal(t, http.StatusBadRequest, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetMerchantUrlDetail", 0)
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckOnProsessNotif", 0)
+		mockNotifService.AssertNumberOfCalls(t, "SendNotifExecution", 0)
+	}(t)
+
+	// Case when failed ton GetMerchantUrlDetail
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotif{
+			MerchantID:        5,
+			NotificationType:  "payment",
+			TransactionID:     32532,
+			Amount:            10000.00,
+			TransactionStatus: "success",
+		}
+
+		mockNotifRepo.On("GetMerchantUrlDetail", req.MerchantID, req.NotificationType).Return(model.GetMerchantUrlDetail{IsActive: true}, errors.New("error"))
+		httpCode, resp := notifService.SendNotif(context.Background(), req)
+		assert.Equal(t, http.StatusInternalServerError, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetMerchantUrlDetail", 1)
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckOnProsessNotif", 0)
+		mockNotifService.AssertNumberOfCalls(t, "SendNotifExecution", 0)
+	}(t)
+
+	// Case when failed ton GetMerchantUrlDetail
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotif{
+			MerchantID:        5,
+			NotificationType:  "payment",
+			TransactionID:     32532,
+			Amount:            10000.00,
+			TransactionStatus: "success",
+		}
+
+		mockNotifRepo.On("GetMerchantUrlDetail", req.MerchantID, req.NotificationType).Return(model.GetMerchantUrlDetail{IsActive: false}, nil)
+		httpCode, resp := notifService.SendNotif(context.Background(), req)
+		assert.Equal(t, http.StatusBadRequest, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetMerchantUrlDetail", 1)
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckOnProsessNotif", 0)
+		mockNotifService.AssertNumberOfCalls(t, "SendNotifExecution", 0)
+	}(t)
+
+	// Case when failed on CheckOnProsessNotif
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotif{
+			MerchantID:        5,
+			NotificationType:  "payment",
+			TransactionID:     32532,
+			Amount:            10000.00,
+			TransactionStatus: "success",
+		}
+
+		checkOnProsessNotifiParam := model.CheckOnProsessNotif{
+			MerchantID:    req.MerchantID,
+			TransactionID: req.TransactionID,
+		}
+
+		mockNotifRepo.On("GetMerchantUrlDetail", req.MerchantID, req.NotificationType).Return(model.GetMerchantUrlDetail{IsActive: true}, nil)
+		mockNotifRepo.On("CheckOnProsessNotif", checkOnProsessNotifiParam).Return(int64(0), errors.New("error"))
+		httpCode, resp := notifService.SendNotif(context.Background(), req)
+		assert.Equal(t, http.StatusInternalServerError, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetMerchantUrlDetail", 1)
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckOnProsessNotif", 1)
+		mockNotifService.AssertNumberOfCalls(t, "SendNotifExecution", 0)
+	}(t)
+
+	// Case when failed on CheckOnProsessNotif
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotif{
+			MerchantID:        5,
+			NotificationType:  "payment",
+			TransactionID:     32532,
+			Amount:            10000.00,
+			TransactionStatus: "success",
+		}
+
+		checkOnProsessNotifiParam := model.CheckOnProsessNotif{
+			MerchantID:    req.MerchantID,
+			TransactionID: req.TransactionID,
+		}
+
+		mockNotifRepo.On("GetMerchantUrlDetail", req.MerchantID, req.NotificationType).Return(model.GetMerchantUrlDetail{IsActive: true}, nil)
+		mockNotifRepo.On("CheckOnProsessNotif", checkOnProsessNotifiParam).Return(int64(1), nil)
+		httpCode, resp := notifService.SendNotif(context.Background(), req)
+		assert.Equal(t, http.StatusBadRequest, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetMerchantUrlDetail", 1)
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckOnProsessNotif", 1)
+		mockNotifService.AssertNumberOfCalls(t, "SendNotifExecution", 0)
+	}(t)
+
+	// Case when failed on InsertNotifExecution
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotif{
+			MerchantID:        5,
+			NotificationType:  "payment",
+			TransactionID:     32532,
+			Amount:            10000.00,
+			TransactionStatus: "success",
+		}
+
+		checkOnProsessNotifiParam := model.CheckOnProsessNotif{
+			MerchantID:    req.MerchantID,
+			TransactionID: req.TransactionID,
+		}
+
+		getMerchantDetail := model.GetMerchantUrlDetail{
+			UrlID:       4,
+			Url:         "http://localhost:3000/tokobaju/webhook/notification",
+			MerchantKey: "vjndkvndk4839u48JnjdsgnjkDSNGJ",
+			IsActive:    true,
+		}
+
+		mockNotifRepo.On("GetMerchantUrlDetail", req.MerchantID, req.NotificationType).Return(getMerchantDetail, nil)
+		mockNotifRepo.On("CheckOnProsessNotif", checkOnProsessNotifiParam).Return(int64(0), nil)
+		mockNotifRepo.On("InsertNotifExecution", mock.Anything).Return(errors.New("error"))
+		httpCode, resp := notifService.SendNotif(context.Background(), req)
+		assert.Equal(t, http.StatusInternalServerError, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetMerchantUrlDetail", 1)
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckOnProsessNotif", 1)
+		mockNotifRepo.AssertNumberOfCalls(t, "InsertNotifExecution", 1)
+		mockNotifService.AssertNumberOfCalls(t, "SendNotifExecution", 0)
+	}(t)
+
+	// Case when success on InsertNotifExecution
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotif{
+			MerchantID:        5,
+			NotificationType:  "payment",
+			TransactionID:     32532,
+			Amount:            10000.00,
+			TransactionStatus: "success",
+		}
+
+		checkOnProsessNotifiParam := model.CheckOnProsessNotif{
+			MerchantID:    req.MerchantID,
+			TransactionID: req.TransactionID,
+		}
+
+		getMerchantDetail := model.GetMerchantUrlDetail{
+			UrlID:       4,
+			Url:         "http://localhost:3000/tokobaju/webhook/notification",
+			MerchantKey: "vjndkvndk4839u48JnjdsgnjkDSNGJ",
+			IsActive:    true,
+		}
+
+		mockNotifRepo.On("GetMerchantUrlDetail", req.MerchantID, req.NotificationType).Return(getMerchantDetail, nil)
+		mockNotifRepo.On("CheckOnProsessNotif", checkOnProsessNotifiParam).Return(int64(0), nil)
+		mockNotifRepo.On("InsertNotifExecution", mock.Anything).Return(nil)
+		httpCode, resp := notifService.SendNotif(context.Background(), req)
+		assert.Equal(t, http.StatusOK, httpCode)
+		assert.Empty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetMerchantUrlDetail", 1)
+		mockNotifRepo.AssertNumberOfCalls(t, "CheckOnProsessNotif", 1)
+		mockNotifRepo.AssertNumberOfCalls(t, "InsertNotifExecution", 1)
+		mockNotifService.AssertNumberOfCalls(t, "SendNotifExecution", 0)
+	}(t)
+}
