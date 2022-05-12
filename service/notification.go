@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,8 +23,11 @@ import (
 type NotifService interface {
 	GenerateKey(ctx context.Context, request model.GenerateKeyRequest) (int, *model.BaseResponse)
 	InsertUrl(ctx context.Context, request model.Url) (int, *model.BaseResponse)
-	NotificationTester(ctx context.Context, request model.NotificationTesterRequest) (int, *model.BaseResponse)
+	SendNotificationTester(ctx context.Context, request model.NotificationTesterRequest) (int, *model.BaseResponse)
 	UrlToggleStatus(ctx context.Context, request model.UrlToggleStatusRequest) (int, *model.BaseResponse)
+	SendNotif(ctx context.Context, request model.SendNotif) (int, *model.BaseResponse)
+	SendNotifExecution(ctx context.Context, param model.SendNotifGoRoutine) (int, *model.BaseResponse)
+	RetrySendNotifExecution(ctx context.Context, param model.SendNotifGoRoutine) (int, *model.BaseResponse)
 }
 
 type notifServiceImpl struct {
@@ -106,7 +110,7 @@ func (s *notifServiceImpl) InsertUrl(ctx context.Context, request model.Url) (in
 	return http.StatusOK, &model.BaseResponse{ResultData: "URL is successfully created"}
 }
 
-func (s *notifServiceImpl) NotificationTester(ctx context.Context, request model.NotificationTesterRequest) (int, *model.BaseResponse) {
+func (s *notifServiceImpl) SendNotificationTester(ctx context.Context, request model.NotificationTesterRequest) (int, *model.BaseResponse) {
 	// validate request
 	if request.UrlID <= 0 {
 		return utils.RequestRequired("url_id")
@@ -146,7 +150,7 @@ func (s *notifServiceImpl) NotificationTester(ctx context.Context, request model
 		//Read the response body
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatalln(err)
+			log.Error(err.Error())
 		}
 		sb := string(body)
 		log.Printf(sb)
@@ -170,4 +174,187 @@ func (s *notifServiceImpl) UrlToggleStatus(ctx context.Context, request model.Ur
 	}
 
 	return http.StatusOK, &model.BaseResponse{ResultData: "Url Toggle is successfully executed"}
+}
+
+func (s *notifServiceImpl) SendNotif(ctx context.Context, request model.SendNotif) (int, *model.BaseResponse) {
+	// validate request
+	if request.TransactionID <= 0 {
+		return utils.RequestRequired("transaction_id")
+	} else if request.MerchantID <= 0 {
+		return utils.RequestRequired("merchant_id")
+	} else if request.NotificationType == "" {
+		return utils.RequestRequired("notification_type")
+	} else if request.TransactionStatus == "" {
+		return utils.RequestRequired("transaction_status")
+	}
+
+	log := logger.GetLoggerContext(ctx, "service", "SendNotif")
+
+	// get the detail of url for validation
+	data, err := s.notifRepo.GetMerchantUrlDetail(request.MerchantID, request.NotificationType)
+	if err != nil {
+		log.Error(fmt.Sprintf("failed while do GetMerchantUrlDetail, err: %s", err.Error()))
+		return http.StatusInternalServerError, &model.BaseResponse{RawMessage: err.Error()}
+	}
+
+	if !data.IsActive {
+		log.Error(fmt.Sprintf("Merchant with ID=%d, the url is Inactive, can't test the notification", request.MerchantID))
+		return http.StatusBadRequest, &model.BaseResponse{RawMessage: errors.New("URL status is InActive").Error()}
+	}
+
+	checkOnProsessNotifiParam := model.CheckOnProsessNotif{
+		MerchantID:    request.MerchantID,
+		TransactionID: request.TransactionID,
+	}
+
+	// check if there is already notification with current merchantID and transactionID
+	count, err := s.notifRepo.CheckOnProsessNotif(checkOnProsessNotifiParam)
+	if err != nil {
+		log.Error(fmt.Sprintf("failed while do CheckOnProsessNotif, err: %s", err.Error()))
+		return http.StatusInternalServerError, &model.BaseResponse{RawMessage: err.Error()}
+	}
+
+	if count > 0 {
+		log.Error(fmt.Sprintf("Merchant with ID=%d, there's already notification with transactionID= %d", request.MerchantID, request.TransactionID))
+		return http.StatusBadRequest, &model.BaseResponse{RawMessage: errors.New("Url or the notification_type is already exist").Error()}
+	}
+
+	uuid := uuid.New()
+	idempotencyKey := fmt.Sprintf("%s%d", uuid.String(), time.Now().Unix())
+
+	// record every notification that able to execute
+	err = s.notifRepo.InsertNotifExecution(model.InsertNotifExecution{
+		MerchantID:        request.MerchantID,
+		UrlID:             data.UrlID,
+		NotificationType:  request.NotificationType,
+		TransactionID:     request.TransactionID,
+		Amount:            request.Amount,
+		TransactionStatus: request.TransactionStatus,
+		Key:               idempotencyKey,
+	})
+	if err != nil {
+		log.Error(fmt.Sprintf("failed while do InsertNotifExecution, err: %s", err.Error()))
+		return http.StatusInternalServerError, &model.BaseResponse{RawMessage: err.Error()}
+	}
+
+	// create checksum to authenticate the notif is from Xendit
+	temp := fmt.Sprintf("%s%d%.2f%s%s", request.NotificationType, request.TransactionID, request.Amount, request.TransactionStatus, data.MerchantKey)
+	md5 := md5.Sum([]byte(temp))
+	checkSum := fmt.Sprintf("%x", md5)
+
+	// start to send notif through merchant's webhook
+	go s.SendNotifExecution(ctx, model.SendNotifGoRoutine{
+		MerchantID:        request.MerchantID,
+		Url:               data.Url,
+		NotificationType:  request.NotificationType,
+		TransactionID:     request.TransactionID,
+		Amount:            request.Amount,
+		TransactionStatus: request.TransactionStatus,
+		CheckSum:          checkSum,
+		IdempotencyKey:    idempotencyKey,
+	})
+
+	return http.StatusOK, &model.BaseResponse{ResultData: "SUCCESS"}
+}
+
+func (s *notifServiceImpl) SendNotifExecution(ctx context.Context, param model.SendNotifGoRoutine) (int, *model.BaseResponse) {
+	log := logger.GetLoggerContext(ctx, "service", "SendNotifExecution")
+
+	postBody, _ := json.Marshal(map[string]interface{}{
+		"notification_type":  param.NotificationType,
+		"transaction_id":     param.TransactionID,
+		"amount":             param.Amount,
+		"transaction_status": param.TransactionStatus,
+		"check_sum":          param.CheckSum,
+		"idempotency_key":    param.IdempotencyKey,
+	})
+	responseBody := bytes.NewBuffer(postBody)
+
+	resp, err := http.Post(param.Url, "application/json", responseBody)
+	//Error handling
+	if err != nil {
+		log.Error(fmt.Sprintf("An Error Occured while try to HIT Webhook with merchantID=%d, err : %v", param.MerchantID, err))
+		log.Error("Service Will do retry for 4 times")
+		s.RetrySendNotifExecution(ctx, param)
+		if err != nil {
+			log.Error(fmt.Sprintf("An Error Occured while do RetrySendNotifExecution with merchantID=%d, err : %v", param.MerchantID, err))
+		}
+		return http.StatusInternalServerError, &model.BaseResponse{RawMessage: err.Error()}
+	}
+
+	// update notification_status
+	err = s.notifRepo.UpdateNotifStatus(model.UpdateNotifStatus{
+		MerchantID:         param.MerchantID,
+		Key:                param.IdempotencyKey,
+		TransactionID:      param.TransactionID,
+		NotificationStatus: "success",
+	})
+	if err != nil {
+		log.Error(fmt.Sprintf("failed while do UpdateNotifStatus, err: %s", err.Error()))
+		return http.StatusInternalServerError, &model.BaseResponse{RawMessage: err.Error()}
+	}
+
+	defer resp.Body.Close()
+
+	//Read the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Error(err.Error())
+	}
+	sb := string(body)
+	log.Printf(sb)
+
+	return http.StatusOK, &model.BaseResponse{ResultData: "SUCCESS"}
+}
+
+func (s *notifServiceImpl) RetrySendNotifExecution(ctx context.Context, param model.SendNotifGoRoutine) (int, *model.BaseResponse) {
+	log := logger.GetLoggerContext(ctx, "service", "RetrySendNotifExecution")
+
+	for i := 0; i < 4; i++ {
+		postBody, _ := json.Marshal(map[string]interface{}{
+			"notification_type":  param.NotificationType,
+			"transaction_id":     param.TransactionID,
+			"amount":             param.Amount,
+			"transaction_status": param.TransactionStatus,
+			"check_sum":          param.CheckSum,
+			"idempotency_key":    param.IdempotencyKey,
+		})
+		responseBody := bytes.NewBuffer(postBody)
+
+		_, err := http.Post(param.Url, "application/json", responseBody)
+		//Error handling
+		if err != nil {
+			if i == 3 {
+				// update notification_status
+				err = s.notifRepo.UpdateNotifStatus(model.UpdateNotifStatus{
+					MerchantID:         param.MerchantID,
+					Key:                param.IdempotencyKey,
+					TransactionID:      param.TransactionID,
+					NotificationStatus: "failed",
+				})
+				if err != nil {
+					log.Error(fmt.Sprintf("failed while do UpdateNotifStatus, err: %s", err.Error()))
+					return http.StatusInternalServerError, &model.BaseResponse{RawMessage: err.Error()}
+				}
+			}
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		// update notification_status
+		err = s.notifRepo.UpdateNotifStatus(model.UpdateNotifStatus{
+			MerchantID:         param.MerchantID,
+			Key:                param.IdempotencyKey,
+			TransactionID:      param.TransactionID,
+			NotificationStatus: "success",
+		})
+		if err != nil {
+			log.Error(fmt.Sprintf("failed while do UpdateNotifStatus, err: %s", err.Error()))
+			return http.StatusInternalServerError, &model.BaseResponse{RawMessage: err.Error()}
+		}
+
+		break
+	}
+
+	return http.StatusOK, &model.BaseResponse{ResultData: "SUCCESS"}
 }

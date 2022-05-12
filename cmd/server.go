@@ -41,11 +41,12 @@ func StartServer() {
 
 	// Notif API
 	route.HandleFunc("/key/create", notifHandler.GenerateKey)
-	route.HandleFunc("/url/create", notifHandler.InsertUrl)
-	route.HandleFunc("/url/test", notifHandler.NotificationTester)
-	route.HandleFunc("/url/toggle", notifHandler.UrlToggle)
+	route.HandleFunc("/notif/create", notifHandler.InsertUrl)
+	route.HandleFunc("/notif/test", notifHandler.SendNotificationTester)
+	route.HandleFunc("/notif/toggle", notifHandler.UrlToggle)
+	route.HandleFunc("/notif/execute", notifHandler.SendNotification)
 
-	log.Println("SERVER STARTED")
+	log.Println(fmt.Sprintf("SERVER STARTED IN PORT : %s", config.GetString("port")))
 
 	http.ListenAndServe(fmt.Sprintf(":%s", config.GetString("port")), route)
 }

@@ -88,7 +88,7 @@ func (h *NotifHandler) InsertUrl(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-func (h *NotifHandler) NotificationTester(w http.ResponseWriter, r *http.Request) {
+func (h *NotifHandler) SendNotificationTester(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := logger.GetLoggerContext(ctx, "handler", "Notif")
 
@@ -104,7 +104,7 @@ func (h *NotifHandler) NotificationTester(w http.ResponseWriter, r *http.Request
 		var request model.NotificationTesterRequest
 		json.Unmarshal(body, &request)
 
-		httpCode, resp = h.notifService.NotificationTester(ctx, request)
+		httpCode, resp = h.notifService.SendNotificationTester(ctx, request)
 	} else {
 		httpCode = http.StatusMethodNotAllowed
 	}
@@ -130,6 +130,31 @@ func (h *NotifHandler) UrlToggle(w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal(body, &request)
 
 		httpCode, resp = h.notifService.UrlToggleStatus(ctx, request)
+	} else {
+		httpCode = http.StatusMethodNotAllowed
+	}
+
+	w.WriteHeader(httpCode)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func (h *NotifHandler) SendNotification(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := logger.GetLoggerContext(ctx, "handler", "Notif")
+
+	body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 5000))
+	log.Info(fmt.Sprintf("%+v", r))
+
+	w.Header().Set("Content-Type", "application/json")
+
+	var httpCode int
+	var resp interface{}
+
+	if r.Method == http.MethodPost {
+		var request model.SendNotif
+		json.Unmarshal(body, &request)
+
+		httpCode, resp = h.notifService.SendNotif(ctx, request)
 	} else {
 		httpCode = http.StatusMethodNotAllowed
 	}

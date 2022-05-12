@@ -21,3 +21,11 @@ type GenerateKeyResponse struct {
 type UrlToggleStatusRequest struct {
 	UrlID int64 `json:"url_id"`
 }
+
+type SendNotif struct {
+	MerchantID        int64   `json:"merchant_id"`
+	NotificationType  string  `json:"notification_type"`
+	TransactionID     int64   `json:"transaction_id"`
+	Amount            float64 `json:"amount"`
+	TransactionStatus string  `json:"transaction_status"`
+}
