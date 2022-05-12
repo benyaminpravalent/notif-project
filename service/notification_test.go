@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	// serviceMock "github.com/project/notif-project/service/mocks"
 	repoMock "github.com/project/notif-project/domain/repository/mocks"
+	serviceMock "github.com/project/notif-project/service/mocks"
 )
 
 func prepare() {
@@ -328,6 +328,74 @@ func TestRetrySendNotifExecution(t *testing.T) {
 		httpCode, resp := notifService.RetrySendNotifExecution(context.Background(), req)
 		assert.Equal(t, http.StatusOK, httpCode)
 		assert.Empty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "UpdateNotifStatus", 1)
+	}(t)
+}
+
+func TestSendNotifExecution(t *testing.T) {
+	prepare()
+
+	// Case when failed
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotifGoRoutine{
+			MerchantID:        4,
+			NotificationType:  "payment",
+			TransactionID:     2323,
+			Amount:            10000.00,
+			TransactionStatus: "success",
+			CheckSum:          "dkjgfndskjgnds9u3t893uytdsf8eyt8ghgidss",
+			IdempotencyKey:    "f43t3409it29fdid385y985398534jnbfjbndf",
+			Url:               "http://localhost:3000/tokobaju/webhook/notification",
+		}
+
+		reqRepo := model.UpdateNotifStatus{
+			MerchantID:         req.MerchantID,
+			Key:                req.IdempotencyKey,
+			TransactionID:      req.TransactionID,
+			NotificationStatus: "success",
+		}
+
+		mockNotifRepo.On("UpdateNotifStatus", reqRepo).Return(errors.New("error"))
+		httpCode, resp := notifService.SendNotifExecution(context.Background(), req)
+		assert.Equal(t, http.StatusInternalServerError, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifService.AssertNumberOfCalls(t, "RetrySendNotifExecution", 0)
+		mockNotifRepo.AssertNumberOfCalls(t, "UpdateNotifStatus", 1)
+	}(t)
+
+	// Case when success
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		mockNotifService := new(serviceMock.NotifService)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.SendNotifGoRoutine{
+			MerchantID:        4,
+			NotificationType:  "payment",
+			TransactionID:     2323,
+			Amount:            10000.00,
+			TransactionStatus: "success",
+			CheckSum:          "dkjgfndskjgnds9u3t893uytdsf8eyt8ghgidss",
+			IdempotencyKey:    "f43t3409it29fdid385y985398534jnbfjbndf",
+			Url:               "http://localhost:3000/tokobaju/webhook/notification",
+		}
+
+		reqRepo := model.UpdateNotifStatus{
+			MerchantID:         req.MerchantID,
+			Key:                req.IdempotencyKey,
+			TransactionID:      req.TransactionID,
+			NotificationStatus: "success",
+		}
+
+		mockNotifRepo.On("UpdateNotifStatus", reqRepo).Return(nil)
+		httpCode, resp := notifService.SendNotifExecution(context.Background(), req)
+		assert.Equal(t, http.StatusOK, httpCode)
+		assert.Empty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifService.AssertNumberOfCalls(t, "RetrySendNotifExecution", 0)
 		mockNotifRepo.AssertNumberOfCalls(t, "UpdateNotifStatus", 1)
 	}(t)
 }

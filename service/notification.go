@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -148,12 +147,12 @@ func (s *notifServiceImpl) SendNotificationTester(ctx context.Context, request m
 		defer resp.Body.Close()
 
 		//Read the response body
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Error(err.Error())
-		}
-		sb := string(body)
-		log.Printf(sb)
+		// body, err := ioutil.ReadAll(resp.Body)
+		// if err != nil {
+		// 	log.Error(err.Error())
+		// }
+		// sb := string(body)
+		// log.Printf(sb)
 	}(data.NotificationType)
 
 	return http.StatusOK, &model.BaseResponse{ResultData: "SUCCESS"}
@@ -275,8 +274,8 @@ func (s *notifServiceImpl) SendNotifExecution(ctx context.Context, param model.S
 	if err != nil {
 		log.Error(fmt.Sprintf("An Error Occured while try to HIT Webhook with merchantID=%d, err : %v", param.MerchantID, err))
 		log.Error("Service Will do retry for 4 times")
-		s.RetrySendNotifExecution(ctx, param)
-		if err != nil {
+		httpCode, _ := s.RetrySendNotifExecution(ctx, param)
+		if httpCode != http.StatusOK {
 			log.Error(fmt.Sprintf("An Error Occured while do RetrySendNotifExecution with merchantID=%d, err : %v", param.MerchantID, err))
 		}
 		return http.StatusInternalServerError, &model.BaseResponse{RawMessage: err.Error()}
@@ -297,12 +296,12 @@ func (s *notifServiceImpl) SendNotifExecution(ctx context.Context, param model.S
 	defer resp.Body.Close()
 
 	//Read the response body
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Error(err.Error())
-	}
-	sb := string(body)
-	log.Printf(sb)
+	// body, err := ioutil.ReadAll(resp.Body)
+	// if err != nil {
+	// 	log.Error(err.Error())
+	// }
+	// sb := string(body)
+	// log.Printf(sb)
 
 	return http.StatusOK, &model.BaseResponse{ResultData: "SUCCESS"}
 }
