@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -75,7 +76,7 @@ func TestGenerateKey(t *testing.T) {
 	}(t)
 }
 
-func TestInsertUrl(t *testing.T) {
+func TestUrlToggleStatus(t *testing.T) {
 	prepare()
 
 	// Case when  merchantID = 0
@@ -162,5 +163,107 @@ func TestInsertUrl(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, httpCode)
 		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
 		mockNotifRepo.AssertNumberOfCalls(t, "CheckUrlExistence", 1)
+	}(t)
+}
+
+func TestInsertUrl(t *testing.T) {
+	prepare()
+
+	// Case when  urlID <= 0
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.UrlToggleStatusRequest{
+			UrlID: 0,
+		}
+
+		httpCode, resp := notifService.UrlToggleStatus(context.Background(), req)
+		assert.Equal(t, httpCode, http.StatusBadRequest)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "UrlToggleStatus", 0)
+	}(t)
+
+	// Case when setting urlID
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.UrlToggleStatusRequest{
+			UrlID: 100000,
+		}
+
+		mockNotifRepo.On("UrlToggleStatus", req.UrlID).Return(errors.New("error"))
+		httpCode, resp := notifService.UrlToggleStatus(context.Background(), req)
+		assert.Equal(t, http.StatusInternalServerError, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "UrlToggleStatus", 1)
+	}(t)
+
+	// Case when setting urlID success
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.UrlToggleStatusRequest{
+			UrlID: 4,
+		}
+
+		mockNotifRepo.On("UrlToggleStatus", req.UrlID).Return(nil)
+		httpCode, resp := notifService.UrlToggleStatus(context.Background(), req)
+		assert.Equal(t, http.StatusOK, httpCode)
+		assert.Empty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "UrlToggleStatus", 1)
+	}(t)
+}
+
+func TestSendNotificationTester(t *testing.T) {
+	prepare()
+
+	// Case when  urlID <= 0
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.UrlToggleStatusRequest{
+			UrlID: 0,
+		}
+
+		httpCode, resp := notifService.UrlToggleStatus(context.Background(), req)
+		assert.Equal(t, http.StatusBadRequest, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetUrlDetail", 0)
+	}(t)
+
+	// Case when urlID is bad request
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.NotificationTesterRequest{
+			UrlID: 4,
+		}
+
+		mockNotifRepo.On("GetUrlDetail", req.UrlID).Return(model.GetUrlDetailRes{IsActive: true}, nil)
+		httpCode, resp := notifService.SendNotificationTester(context.Background(), req)
+		assert.Equal(t, http.StatusBadRequest, httpCode)
+		assert.NotEmpty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetUrlDetail", 1)
+	}(t)
+
+	// Case when urlID is bad request
+	func(t *testing.T) {
+		mockNotifRepo := new(repoMock.NotifRepository)
+		notifService := service.NewNotifService().SetNotifRepo(mockNotifRepo)
+
+		req := model.NotificationTesterRequest{
+			UrlID: 4,
+		}
+
+		mockNotifRepo.On("GetUrlDetail", req.UrlID).Return(model.GetUrlDetailRes{IsActive: false}, nil)
+		httpCode, resp := notifService.SendNotificationTester(context.Background(), req)
+		assert.Equal(t, http.StatusOK, httpCode)
+		assert.Empty(t, resp.RawMessage, "Response raw message should not be nil")
+		mockNotifRepo.AssertNumberOfCalls(t, "GetUrlDetail", 1)
 	}(t)
 }
