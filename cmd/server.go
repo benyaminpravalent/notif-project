@@ -40,9 +40,9 @@ func StartServer() {
 	route := http.NewServeMux()
 
 	// Notif API
-	route.HandleFunc("/key/create", notifHandler.GenerateKey)
-	route.HandleFunc("/notif/create", notifHandler.InsertUrl)
-	route.HandleFunc("/notif/test", notifHandler.SendNotificationTester)
+	route.HandleFunc("/notif/generate-key", notifHandler.GenerateKey)
+	route.HandleFunc("/notif/create-url", notifHandler.InsertUrl)
+	route.HandleFunc("/notif/execute-test", notifHandler.SendNotificationTester)
 	route.HandleFunc("/notif/toggle", notifHandler.UrlToggle)
 	route.HandleFunc("/notif/execute", notifHandler.SendNotification)
 

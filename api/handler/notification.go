@@ -37,7 +37,7 @@ func (h *NotifHandler) Validate() *NotifHandler {
 	return h
 }
 
-// Brand handles endpoint with prefix /brand.
+// Notif handles endpoint with prefix /brand.
 func (h *NotifHandler) GenerateKey(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := logger.GetLoggerContext(ctx, "handler", "Notif")
